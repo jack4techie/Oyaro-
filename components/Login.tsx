@@ -19,12 +19,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     
     // Simulate API call
     setTimeout(() => {
+      // In a real app, this would come from a backend. 
+      // For now, we mock a user.
       const mockUser: User = {
         id: '1',
-        name: 'Sarah Wilson',
+        name: 'Sarah Wilson', // Fallback if no specific user logic
         email: email
       };
-      onLogin(mockUser);
+      
+      // If there is a "last registered" user in storage for demo purposes, try to use that name
+      const stored = localStorage.getItem('maonda_user');
+      const userToLogin = stored ? JSON.parse(stored) : mockUser;
+
+      onLogin(userToLogin);
       navigate(AppRoute.DASHBOARD);
       setIsLoading(false);
     }, 1000);
@@ -38,7 +45,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="relative z-10 flex flex-col items-center">
              <Heart className="w-12 h-12 mb-3 text-primary fill-current" />
              <h2 className="text-2xl font-serif font-bold">Welcome Back</h2>
-             <p className="text-slate-300 text-sm mt-1">Sign in to Mounda Foundation</p>
+             <p className="text-slate-300 text-sm mt-1">Sign in to Maonda Foundation</p>
           </div>
         </div>
         

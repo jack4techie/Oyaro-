@@ -2,22 +2,14 @@ import React, { useState } from 'react';
 import { ChefHat, Loader2, Sparkles, Book, Clock } from 'lucide-react';
 import { generateRecipe, hasApiKey } from '../services/geminiService';
 import { Recipe } from '../types';
+import { useAppContext } from '../context/AppContext';
 
 const RecipeBook: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [recipes, setRecipes] = useState<Recipe[]>([
-    {
-      id: 'default-1',
-      title: "Grandma's Sunday Roast",
-      author: "Grandma Mary",
-      ingredients: ["4lb Beef Roast", "5 Carrots", "5 Potatoes", "Onion Soup Mix"],
-      instructions: ["Preheat oven to 350F", "Chop veggies", "Place roast in pan", "Cover and bake for 3 hours"],
-      prepTime: "3.5 hours",
-      story: "This roast has been the centerpiece of our Sunday gatherings since 1985. It smells like home."
-    }
-  ]);
   const [error, setError] = useState<string | null>(null);
+  
+  const { recipes, addRecipe } = useAppContext();
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -35,7 +27,7 @@ const RecipeBook: React.FC = () => {
         author: "AI Chef Assistant",
         ...result
       };
-      setRecipes([newRecipe, ...recipes]);
+      addRecipe(newRecipe);
       setPrompt('');
     } catch (e) {
       setError("Failed to cook up a recipe. Please try again.");

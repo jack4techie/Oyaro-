@@ -6,13 +6,19 @@ const ai = new GoogleGenAI({ apiKey });
 // Helper to check if API key is present
 export const hasApiKey = (): boolean => !!apiKey;
 
-export const createChatSession = (): Chat => {
+export const createChatSession = (contextData?: string): Chat => {
   if (!apiKey) throw new Error("API Key missing");
   
+  const baseInstruction = "You are the Maonda Foundation AI assistant. You help family members navigate the website, suggest recipes, find events, and preserve family history. You are warm, helpful, polite, and knowledgeable about family heritage.";
+  
+  const systemInstruction = contextData 
+    ? `${baseInstruction}\n\nHere is the current information available on the website (Events, Directory, Recipes, Stories). Use this data to answer user questions:\n${contextData}`
+    : baseInstruction;
+
   return ai.chats.create({
     model: "gemini-2.5-flash",
     config: {
-      systemInstruction: "You are the Mounda Foundation AI assistant. You help family members navigate the website, suggest recipes, find events, and preserve family history. You are warm, helpful, polite, and knowledgeable about family heritage."
+      systemInstruction: systemInstruction
     }
   });
 };

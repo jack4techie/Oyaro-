@@ -2,21 +2,14 @@ import React, { useState } from 'react';
 import { Feather, Loader2, BookOpen, Send } from 'lucide-react';
 import { polishFamilyStory, hasApiKey } from '../services/geminiService';
 import { FamilyStory } from '../types';
+import { useAppContext } from '../context/AppContext';
 
 const FamilyHistorian: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [isPolishing, setIsPolishing] = useState(false);
-  const [stories, setStories] = useState<FamilyStory[]>([
-    {
-      id: '1',
-      title: "The Treehouse Summer",
-      author: "Uncle Bob",
-      date: "1998-07-15",
-      content: "It was the summer of '98 when we decided to build the biggest treehouse the neighborhood had ever seen. Armed with nothing but scrap wood and youthful optimism, we spent every waking hour in that old oak tree...",
-      tags: ["Childhood", "Summer", "Adventure"]
-    }
-  ]);
   const [error, setError] = useState<string | null>(null);
+
+  const { stories, addStory } = useAppContext();
 
   const handlePolish = async () => {
     if (!notes.trim()) return;
@@ -37,7 +30,7 @@ const FamilyHistorian: React.FC = () => {
         content: polishedContent,
         tags: ["AI Assisted", "Memory"]
       };
-      setStories([newStory, ...stories]);
+      addStory(newStory);
       setNotes('');
     } catch (e) {
       setError("Failed to polish the story.");

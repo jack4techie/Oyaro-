@@ -36,7 +36,7 @@ const Register: React.FC<RegisterProps> = ({ onLogin }) => {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
         <div className="p-8 text-center bg-white border-b border-slate-100">
              <Heart className="w-10 h-10 mx-auto mb-3 text-primary fill-current" />
-             <h2 className="text-2xl font-serif font-bold text-slate-800">Join Mounda Foundation</h2>
+             <h2 className="text-2xl font-serif font-bold text-slate-800">Join Maonda Foundation</h2>
              <p className="text-slate-500 text-sm mt-1">Create your family account</p>
         </div>
         

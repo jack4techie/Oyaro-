@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { AppRoute, User } from '../types';
 import ChatBot from './ChatBot';
+import NotificationCenter from './NotificationCenter';
 
 interface LayoutProps {
   user: User | null;
@@ -44,11 +45,14 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
       <div className="md:hidden bg-white border-b p-4 flex justify-between items-center sticky top-0 z-20">
         <div className="flex items-center gap-2 text-primary">
           <Heart className="w-6 h-6 fill-current" />
-          <span className="font-serif font-bold text-xl text-slate-800">Mounda</span>
+          <span className="font-serif font-bold text-xl text-slate-800">Maonda</span>
         </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-          {isMobileMenuOpen ? <X /> : <Menu />}
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationCenter />
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2">
+            {isMobileMenuOpen ? <X /> : <Menu />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar Navigation */}
@@ -60,21 +64,27 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
         <div className="p-6 hidden md:flex items-center gap-2 text-primary mb-6">
           <Heart className="w-8 h-8 fill-current" />
           <div className="flex flex-col">
-            <span className="font-serif font-bold text-xl text-slate-800 leading-none">Mounda</span>
+            <span className="font-serif font-bold text-xl text-slate-800 leading-none">Maonda</span>
             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Foundation</span>
           </div>
         </div>
 
         <div className="px-6 mb-4">
-           <div className="bg-slate-50 p-3 rounded-lg flex items-center gap-3 border border-slate-100">
-             <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
-               {user?.name.charAt(0) || 'U'}
+           <NavLink to={AppRoute.PROFILE} onClick={() => setIsMobileMenuOpen(false)} className="block group">
+             <div className="bg-slate-50 p-3 rounded-lg flex items-center gap-3 border border-slate-100 group-hover:border-primary/30 transition-colors">
+               <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold overflow-hidden">
+                 {user?.avatar ? (
+                   <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                 ) : (
+                   user?.name.charAt(0) || 'U'
+                 )}
+               </div>
+               <div className="flex-1 overflow-hidden">
+                 <p className="text-sm font-medium text-slate-900 truncate group-hover:text-primary transition-colors">{user?.name}</p>
+                 <p className="text-xs text-slate-500 truncate">View Profile</p>
+               </div>
              </div>
-             <div className="flex-1 overflow-hidden">
-               <p className="text-sm font-medium text-slate-900 truncate">{user?.name}</p>
-               <p className="text-xs text-slate-500 truncate">{user?.email}</p>
-             </div>
-           </div>
+           </NavLink>
         </div>
 
         <nav className="flex-1 px-4 space-y-1">
@@ -97,6 +107,13 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
         </nav>
 
         <div className="p-6 border-t border-slate-100 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Alerts</span>
+            <div className="md:block hidden">
+              <NotificationCenter />
+            </div>
+          </div>
+          
           <div className="bg-gradient-to-br from-secondary/20 to-primary/20 p-4 rounded-xl">
             <h4 className="text-sm font-bold text-slate-800 mb-1">Annual Gala</h4>
             <p className="text-xs text-slate-600 mb-2">In 24 days</p>
@@ -117,7 +134,8 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
       {/* Main Content */}
       <main className="flex-1 bg-slate-50 p-4 md:p-8 overflow-y-auto relative">
         <div className="max-w-6xl mx-auto">
-          <Outlet />
+          {/* Pass the user to all child routes via context */}
+          <Outlet context={{ user }} />
         </div>
       </main>
 

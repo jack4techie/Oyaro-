@@ -1,20 +1,12 @@
 import React, { useState } from 'react';
 import { Search, MapPin, Gift } from 'lucide-react';
-import { FamilyMember } from '../types';
-
-const MOCK_MEMBERS: FamilyMember[] = [
-  { id: '1', name: 'Robert Smith', relation: 'Grandfather', birthDate: '1950-05-12', location: 'Austin, TX', avatar: 'https://picsum.photos/100/100?random=1', bio: 'Retired engineer, loves fishing and woodworking.' },
-  { id: '2', name: 'Mary Smith', relation: 'Grandmother', birthDate: '1952-08-23', location: 'Austin, TX', avatar: 'https://picsum.photos/100/100?random=2', bio: 'Best cookie baker in the county. Gardening enthusiast.' },
-  { id: '3', name: 'James Wilson', relation: 'Father', birthDate: '1975-03-15', location: 'Seattle, WA', avatar: 'https://picsum.photos/100/100?random=3', bio: 'Software architect. Loves hiking.' },
-  { id: '4', name: 'Sarah Wilson', relation: 'Mother', birthDate: '1978-11-30', location: 'Seattle, WA', avatar: 'https://picsum.photos/100/100?random=4', bio: 'High school teacher. Bookworm.' },
-  { id: '5', name: 'Emma Wilson', relation: 'Daughter', birthDate: '2005-06-10', location: 'Boston, MA', avatar: 'https://picsum.photos/100/100?random=5', bio: 'College student. Aspiring artist.' },
-  { id: '6', name: 'Lucas Wilson', relation: 'Son', birthDate: '2008-01-22', location: 'Seattle, WA', avatar: 'https://picsum.photos/100/100?random=6', bio: 'High school student. Soccer player.' },
-];
+import { useAppContext } from '../context/AppContext';
 
 const Directory: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { members } = useAppContext();
 
-  const filteredMembers = MOCK_MEMBERS.filter(member => 
+  const filteredMembers = members.filter(member => 
     member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.relation.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.location.toLowerCase().includes(searchTerm.toLowerCase())

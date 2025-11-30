@@ -10,7 +10,7 @@ const Landing: React.FC = () => {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2 text-primary">
           <Heart className="w-8 h-8 fill-current" />
-          <span className="font-serif font-bold text-2xl text-slate-900">Mounda Foundation</span>
+          <span className="font-serif font-bold text-2xl text-slate-900">Maonda Foundation</span>
         </div>
         <div className="flex items-center gap-4">
           <Link to={AppRoute.LOGIN} className="text-slate-600 hover:text-slate-900 font-medium px-4 py-2">
@@ -31,7 +31,7 @@ const Landing: React.FC = () => {
               <span className="text-primary">Connecting Generations</span>
             </h1>
             <p className="text-xl text-slate-600 mb-10 leading-relaxed">
-              Mounda Foundation provides a private, secure digital sanctuary for your family's legacy. 
+              Maonda Foundation provides a private, secure digital sanctuary for your family's legacy. 
               Manage events, share recipes, archive stories, and stay connected like never before.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -94,9 +94,9 @@ const Landing: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 text-white">
             <Heart className="w-6 h-6 fill-current text-primary" />
-            <span className="font-serif font-bold text-xl">Mounda Foundation</span>
+            <span className="font-serif font-bold text-xl">Maonda Foundation</span>
           </div>
-          <p className="text-sm">© {new Date().getFullYear()} Mounda Foundation. All rights reserved.</p>
+          <p className="text-sm">© {new Date().getFullYear()} Maonda Foundation. All rights reserved.</p>
         </div>
       </footer>
     </div>

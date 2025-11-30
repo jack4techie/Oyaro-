@@ -1,3 +1,4 @@
+
 export interface FamilyMember {
   id: string;
   name: string;
@@ -12,8 +13,11 @@ export interface FamilyEvent {
   id: string;
   title: string;
   date: string;
+  time?: string;
+  location?: string;
   type: 'birthday' | 'reunion' | 'holiday' | 'other';
   description: string;
+  rsvpStatus?: 'going' | 'maybe' | 'not_going';
 }
 
 export interface Recipe {
@@ -40,6 +44,21 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatar?: string;
+  bio?: string;
+  location?: string;
+  interests?: string[];
+  birthDate?: string;
+  phone?: string;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  date: string;
+  read: boolean;
+  type: 'event' | 'message' | 'system';
 }
 
 export enum AppRoute {
@@ -51,5 +70,6 @@ export enum AppRoute {
   CALENDAR = '/calendar',
   RECIPES = '/recipes',
   STORIES = '/stories',
-  GALLERY = '/gallery'
+  GALLERY = '/gallery',
+  PROFILE = '/profile'
 }

@@ -1,9 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { Calendar, Star, MessageCircle, ArrowRight } from 'lucide-react';
-import { AppRoute } from '../types';
+import { AppRoute, User } from '../types';
 
 const Dashboard: React.FC = () => {
+  // Access the user context passed from Layout
+  const { user } = useOutletContext<{ user: User }>();
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -15,7 +18,7 @@ const Dashboard: React.FC = () => {
           className="w-full h-64 object-cover"
         />
         <div className="absolute bottom-0 left-0 p-8 z-20 text-white">
-          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-2">Welcome Home, Sarah</h1>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-2">Welcome Home, {user ? user.name : 'Member'}</h1>
           <p className="text-slate-200 max-w-xl">
             Stay connected with the latest family updates, upcoming events, and cherished memories.
           </p>
