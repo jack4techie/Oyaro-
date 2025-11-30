@@ -1,0 +1,137 @@
+import React, { useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { 
+  Home, 
+  Users, 
+  Calendar, 
+  Utensils, 
+  BookOpen, 
+  Image as ImageIcon, 
+  Menu, 
+  X,
+  Heart,
+  LogOut
+} from 'lucide-react';
+import { AppRoute, User } from '../types';
+import ChatBot from './ChatBot';
+
+interface LayoutProps {
+  user: User | null;
+  onLogout: () => void;
+}
+
+const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const navItems = [
+    { name: 'Dashboard', path: AppRoute.DASHBOARD, icon: Home },
+    { name: 'Directory', path: AppRoute.DIRECTORY, icon: Users },
+    { name: 'Calendar', path: AppRoute.CALENDAR, icon: Calendar },
+    { name: 'Recipes', path: AppRoute.RECIPES, icon: Utensils },
+    { name: 'Historian', path: AppRoute.STORIES, icon: BookOpen },
+    { name: 'Gallery', path: AppRoute.GALLERY, icon: ImageIcon },
+  ];
+
+  const handleLogout = () => {
+    onLogout();
+    navigate(AppRoute.HOME);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Mobile Header */}
+      <div className="md:hidden bg-white border-b p-4 flex justify-between items-center sticky top-0 z-20">
+        <div className="flex items-center gap-2 text-primary">
+          <Heart className="w-6 h-6 fill-current" />
+          <span className="font-serif font-bold text-xl text-slate-800">Mounda</span>
+        </div>
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          {isMobileMenuOpen ? <X /> : <Menu />}
+        </button>
+      </div>
+
+      {/* Sidebar Navigation */}
+      <aside className={`
+        fixed md:sticky top-0 left-0 h-screen w-64 bg-white border-r border-slate-200 z-10 transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0 flex flex-col
+      `}>
+        <div className="p-6 hidden md:flex items-center gap-2 text-primary mb-6">
+          <Heart className="w-8 h-8 fill-current" />
+          <div className="flex flex-col">
+            <span className="font-serif font-bold text-xl text-slate-800 leading-none">Mounda</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Foundation</span>
+          </div>
+        </div>
+
+        <div className="px-6 mb-4">
+           <div className="bg-slate-50 p-3 rounded-lg flex items-center gap-3 border border-slate-100">
+             <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold">
+               {user?.name.charAt(0) || 'U'}
+             </div>
+             <div className="flex-1 overflow-hidden">
+               <p className="text-sm font-medium text-slate-900 truncate">{user?.name}</p>
+               <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+             </div>
+           </div>
+        </div>
+
+        <nav className="flex-1 px-4 space-y-1">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={({ isActive }) => `
+                flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                ${isActive 
+                  ? 'bg-primary/10 text-primary font-medium' 
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+              `}
+            >
+              <item.icon className="w-5 h-5" />
+              {item.name}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="p-6 border-t border-slate-100 space-y-4">
+          <div className="bg-gradient-to-br from-secondary/20 to-primary/20 p-4 rounded-xl">
+            <h4 className="text-sm font-bold text-slate-800 mb-1">Annual Gala</h4>
+            <p className="text-xs text-slate-600 mb-2">In 24 days</p>
+            <div className="h-1.5 w-full bg-white rounded-full overflow-hidden">
+              <div className="h-full bg-primary w-3/4 rounded-full"></div>
+            </div>
+          </div>
+          
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-slate-500 hover:text-rose-600 text-sm font-medium w-full px-2 transition-colors"
+          >
+            <LogOut className="w-4 h-4" /> Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 bg-slate-50 p-4 md:p-8 overflow-y-auto relative">
+        <div className="max-w-6xl mx-auto">
+          <Outlet />
+        </div>
+      </main>
+
+      <ChatBot />
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-0 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Layout;
