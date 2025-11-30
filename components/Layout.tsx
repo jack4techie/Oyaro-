@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
@@ -7,6 +8,7 @@ import {
   Utensils, 
   BookOpen, 
   Image as ImageIcon, 
+  ShoppingBag,
   Menu, 
   X,
   Heart,
@@ -15,6 +17,7 @@ import {
 import { AppRoute, User } from '../types';
 import ChatBot from './ChatBot';
 import NotificationCenter from './NotificationCenter';
+import { useAppContext } from '../context/AppContext';
 
 interface LayoutProps {
   user: User | null;
@@ -24,6 +27,10 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  // We can access cart here to show a badge if needed, though Shop handles its own UI usually.
+  // Let's add it to the nav just in case.
+  const { cart } = useAppContext();
+  const cartItemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   const navItems = [
     { name: 'Dashboard', path: AppRoute.DASHBOARD, icon: Home },
@@ -32,6 +39,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
     { name: 'Recipes', path: AppRoute.RECIPES, icon: Utensils },
     { name: 'Historian', path: AppRoute.STORIES, icon: BookOpen },
     { name: 'Gallery', path: AppRoute.GALLERY, icon: ImageIcon },
+    { name: 'Family Store', path: AppRoute.SHOP, icon: ShoppingBag, badge: cartItemCount },
   ];
 
   const handleLogout = () => {
@@ -94,14 +102,19 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
               to={item.path}
               onClick={() => setIsMobileMenuOpen(false)}
               className={({ isActive }) => `
-                flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                flex items-center gap-3 px-4 py-3 rounded-lg transition-colors relative
                 ${isActive 
                   ? 'bg-primary/10 text-primary font-medium' 
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
               `}
             >
               <item.icon className="w-5 h-5" />
-              {item.name}
+              <span>{item.name}</span>
+              {item.badge && item.badge > 0 ? (
+                <span className="absolute right-4 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  {item.badge}
+                </span>
+              ) : null}
             </NavLink>
           ))}
         </nav>

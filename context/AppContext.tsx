@@ -1,16 +1,22 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { FamilyEvent, FamilyMember, Recipe, FamilyStory } from '../types';
+import { FamilyEvent, FamilyMember, Recipe, FamilyStory, Product, CartItem } from '../types';
 
 interface AppContextType {
   events: FamilyEvent[];
   members: FamilyMember[];
   recipes: Recipe[];
   stories: FamilyStory[];
+  products: Product[];
+  cart: CartItem[];
   addEvent: (event: FamilyEvent) => void;
   updateEvent: (event: FamilyEvent) => void;
   addRecipe: (recipe: Recipe) => void;
   addStory: (story: FamilyStory) => void;
+  addToCart: (product: Product) => void;
+  removeFromCart: (productId: string) => void;
+  updateCartQuantity: (productId: string, delta: number) => void;
+  clearCart: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -71,11 +77,22 @@ const INITIAL_STORIES: FamilyStory[] = [
   }
 ];
 
+const INITIAL_PRODUCTS: Product[] = [
+  { id: '1', name: 'Official Reunion Tee', price: 24.99, category: 'clothing', image: 'https://picsum.photos/400/400?random=100', description: '100% Cotton t-shirt with family crest.' },
+  { id: '2', name: 'Heritage Coffee Mug', price: 14.50, category: 'keepsake', image: 'https://picsum.photos/400/400?random=101', description: 'Start your morning with family pride.' },
+  { id: '3', name: 'Maonda Hoodie', price: 49.99, category: 'clothing', image: 'https://picsum.photos/400/400?random=102', description: 'Cozy fleece hoodie for cold evenings.' },
+  { id: '4', name: 'Family Recipe Book', price: 34.00, category: 'keepsake', image: 'https://picsum.photos/400/400?random=103', description: 'Hardcover collection of our best recipes.' },
+  { id: '5', name: 'Foundation Donation', price: 50.00, category: 'donation', image: 'https://picsum.photos/400/400?random=104', description: 'Support the Maonda Foundation education fund.' },
+  { id: '6', name: 'Canvas Tote Bag', price: 12.00, category: 'clothing', image: 'https://picsum.photos/400/400?random=105', description: 'Durable tote for your daily needs.' },
+];
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [events, setEvents] = useState<FamilyEvent[]>(INITIAL_EVENTS);
   const [members] = useState<FamilyMember[]>(INITIAL_MEMBERS);
   const [recipes, setRecipes] = useState<Recipe[]>(INITIAL_RECIPES);
   const [stories, setStories] = useState<FamilyStory[]>(INITIAL_STORIES);
+  const [products] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const addEvent = (event: FamilyEvent) => {
     setEvents(prev => [...prev, event].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
@@ -93,16 +110,52 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setStories(prev => [story, ...prev]);
   };
 
+  const addToCart = (product: Product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(item => item.id !== productId));
+  };
+
+  const updateCartQuantity = (productId: string, delta: number) => {
+    setCart(prev => {
+      return prev.map(item => {
+        if (item.id === productId) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : item;
+        }
+        return item;
+      });
+    });
+  };
+
+  const clearCart = () => {
+    setCart([]);
+  };
+
   return (
     <AppContext.Provider value={{ 
       events, 
       members, 
       recipes, 
       stories, 
+      products,
+      cart,
       addEvent, 
       updateEvent, 
       addRecipe, 
-      addStory 
+      addStory,
+      addToCart,
+      removeFromCart,
+      updateCartQuantity,
+      clearCart
     }}>
       {children}
     </AppContext.Provider>

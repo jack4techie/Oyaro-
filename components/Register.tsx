@@ -1,33 +1,61 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, User, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
-import { AppRoute, User as UserType } from '../types';
+import { Heart, User, Mail, Lock, Loader2, ArrowRight, AlertCircle } from 'lucide-react';
+import { AppRoute } from '../types';
 
-interface RegisterProps {
-  onLogin: (user: UserType) => void;
-}
-
-const Register: React.FC<RegisterProps> = ({ onLogin }) => {
+const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // Simulate API call
     setTimeout(() => {
-      const mockUser: UserType = {
-        id: Date.now().toString(),
-        name: name,
-        email: email
-      };
-      onLogin(mockUser);
-      navigate(AppRoute.DASHBOARD);
-      setIsLoading(false);
+      try {
+        const dbUsers = JSON.parse(localStorage.getItem('maonda_db_users') || '[]');
+        
+        // Check if user exists
+        if (dbUsers.find((u: any) => u.email.toLowerCase() === email.toLowerCase())) {
+          setError('This email is already registered. Please sign in.');
+          setIsLoading(false);
+          return;
+        }
+
+        const newUser = {
+          id: Date.now().toString(),
+          name,
+          email,
+          password, // Store password
+          avatar: '',
+          bio: '',
+          location: '',
+          interests: [],
+          birthDate: '',
+          phone: ''
+        };
+
+        // Save to "DB"
+        dbUsers.push(newUser);
+        localStorage.setItem('maonda_db_users', JSON.stringify(dbUsers));
+
+        // Redirect to Login with success message
+        navigate(AppRoute.LOGIN, { 
+          state: { message: 'Registration successful! Please sign in with your new credentials.' } 
+        });
+
+      } catch (err) {
+        setError('Failed to create account. Please try again.');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     }, 1500);
   };
 
@@ -41,6 +69,13 @@ const Register: React.FC<RegisterProps> = ({ onLogin }) => {
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Full Name</label>
             <div className="relative">

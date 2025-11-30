@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../types';
 import { 
@@ -5,7 +6,6 @@ import {
   MapPin, 
   Calendar, 
   Phone, 
-  Mail, 
   Edit2, 
   Save, 
   X, 
@@ -13,15 +13,16 @@ import {
   User as UserIcon,
   Briefcase,
   Aperture,
-  SwitchCamera
+  LogOut
 } from 'lucide-react';
 
 interface ProfileProps {
   user: User;
   onUpdateUser: (user: User) => void;
+  onLogout: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
+const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser, onLogout }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<User>(user);
   const [newInterest, setNewInterest] = useState('');
@@ -157,8 +158,17 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
       )}
 
       {/* Header / Cover */}
-      <div className="relative mb-20">
-        <div className="h-48 rounded-2xl bg-gradient-to-r from-rose-400 to-orange-300 w-full object-cover"></div>
+      <div className="relative mb-20 group/header">
+        <div className="h-48 rounded-2xl bg-gradient-to-r from-rose-400 to-orange-300 w-full object-cover shadow-sm"></div>
+        
+        {/* Logout Button */}
+        <button 
+          onClick={onLogout}
+          className="absolute top-4 right-4 bg-white/20 backdrop-blur-md hover:bg-white/40 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+        >
+          <LogOut className="w-4 h-4" /> Sign Out
+        </button>
+
         <div className="absolute -bottom-16 left-8 flex items-end">
           <div className="relative group">
             <div className="w-32 h-32 rounded-full border-4 border-slate-50 overflow-hidden bg-white shadow-md flex items-center justify-center">

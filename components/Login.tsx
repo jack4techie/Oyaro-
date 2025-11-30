@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Heart, Mail, Lock, Loader2, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import { AppRoute, User } from '../types';
 
 interface LoginProps {
@@ -11,29 +12,62 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check for success message from registration redirect
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clean up state so message doesn't persist on refresh if we were to use history replace (optional)
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // Simulate API call
+    // Simulate network delay
     setTimeout(() => {
-      // In a real app, this would come from a backend. 
-      // For now, we mock a user.
-      const mockUser: User = {
-        id: '1',
-        name: 'Sarah Wilson', // Fallback if no specific user logic
-        email: email
-      };
-      
-      // If there is a "last registered" user in storage for demo purposes, try to use that name
-      const stored = localStorage.getItem('maonda_user');
-      const userToLogin = stored ? JSON.parse(stored) : mockUser;
+      try {
+        // Retrieve registered users from local storage
+        const dbUsers = JSON.parse(localStorage.getItem('maonda_db_users') || '[]');
+        
+        // Find user with matching credentials
+        const validUser = dbUsers.find((u: any) => 
+          u.email.toLowerCase() === email.toLowerCase() && u.password === password
+        );
 
-      onLogin(userToLogin);
-      navigate(AppRoute.DASHBOARD);
-      setIsLoading(false);
+        if (validUser) {
+          // Create session user object (exclude password)
+          const sessionUser: User = {
+            id: validUser.id,
+            name: validUser.name,
+            email: validUser.email,
+            avatar: validUser.avatar,
+            bio: validUser.bio,
+            location: validUser.location,
+            interests: validUser.interests,
+            birthDate: validUser.birthDate,
+            phone: validUser.phone
+          };
+
+          onLogin(sessionUser);
+          navigate(AppRoute.DASHBOARD);
+        } else {
+          setError('Invalid email or password. Please check your credentials.');
+        }
+      } catch (err) {
+        setError('An error occurred during login. Please try again.');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     }, 1000);
   };
 
@@ -50,6 +84,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          {successMessage && (
+            <div className="bg-green-50 text-green-600 p-3 rounded-lg text-sm flex items-start gap-2 border border-green-100">
+              <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{successMessage}</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-start gap-2 border border-red-100">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Email Address</label>
             <div className="relative">

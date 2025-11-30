@@ -61,6 +61,19 @@ export interface Notification {
   type: 'event' | 'message' | 'system';
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  image: string;
+  category: 'clothing' | 'keepsake' | 'digital' | 'donation';
+}
+
+export interface CartItem extends Product {
+  quantity: number;
+}
+
 export enum AppRoute {
   HOME = '/',
   LOGIN = '/login',
@@ -71,5 +84,6 @@ export enum AppRoute {
   RECIPES = '/recipes',
   STORIES = '/stories',
   GALLERY = '/gallery',
-  PROFILE = '/profile'
+  PROFILE = '/profile',
+  SHOP = '/shop'
 }
