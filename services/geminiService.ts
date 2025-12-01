@@ -9,11 +9,36 @@ export const hasApiKey = (): boolean => !!apiKey;
 export const createChatSession = (contextData?: string): Chat => {
   if (!apiKey) throw new Error("API Key missing");
   
-  const baseInstruction = "You are the Maonda Foundation AI assistant. You help family members navigate the website, suggest recipes, find events, and preserve family history. You are warm, helpful, polite, and knowledgeable about family heritage.";
+  const baseInstruction = "You are the Maonda Foundation AI assistant (Gervas). You help family members navigate the website, suggest recipes, find events, and preserve family history. You are warm, helpful, polite, and knowledgeable about family heritage.";
   
   const systemInstruction = contextData 
     ? `${baseInstruction}\n\nHere is the current information available on the website (Events, Directory, Recipes, Stories). Use this data to answer user questions:\n${contextData}`
     : baseInstruction;
+
+  return ai.chats.create({
+    model: "gemini-2.5-flash",
+    config: {
+      systemInstruction: systemInstruction
+    }
+  });
+};
+
+// New: Dedicated Tutor Session for E-Learning
+export const createTutorSession = (lessonContent: string, courseTitle: string): Chat => {
+  if (!apiKey) throw new Error("API Key missing");
+
+  const systemInstruction = `You are an expert AI Tutor for the Maonda Foundation Learning Center. 
+  The student is currently taking the course: "${courseTitle}".
+  
+  Current Lesson Content:
+  "${lessonContent}"
+
+  Your Goal:
+  1. Answer questions specifically about this lesson.
+  2. If the student is stuck, provide hints rather than direct answers immediately.
+  3. Be encouraging, patient, and educational.
+  4. If asked about unrelated topics, politely guide them back to the lesson.
+  5. Use markdown to format code or key concepts nicely.`;
 
   return ai.chats.create({
     model: "gemini-2.5-flash",

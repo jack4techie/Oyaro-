@@ -14,7 +14,8 @@ import {
   Heart,
   LogOut,
   GitGraph,
-  Flower
+  Flower,
+  GraduationCap
 } from 'lucide-react';
 import { AppRoute, User } from '../types';
 import ChatBot from './ChatBot';
@@ -37,6 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
     { name: 'Directory', path: AppRoute.DIRECTORY, icon: Users },
     { name: 'Family Tree', path: AppRoute.FAMILY_TREE, icon: GitGraph },
     { name: 'In Loving Memory', path: AppRoute.MEMORIAL, icon: Flower },
+    { name: 'Learning Center', path: AppRoute.LEARNING, icon: GraduationCap },
     { name: 'Calendar', path: AppRoute.CALENDAR, icon: Calendar },
     { name: 'Recipes', path: AppRoute.RECIPES, icon: Utensils },
     { name: 'Historian', path: AppRoute.STORIES, icon: BookOpen },
@@ -146,6 +148,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
         </div>
       </main>
 
+      {/* Global ChatBot - Will hide itself based on route if necessary */}
       <ChatBot />
 
       {/* Mobile Overlay */}

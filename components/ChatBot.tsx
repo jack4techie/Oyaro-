@@ -28,8 +28,10 @@ const ChatBot: React.FC = () => {
   const navigate = useNavigate();
   const { events, members, recipes, stories } = useAppContext();
 
-  // Condition to hide ChatBot on Family Chronicles page
+  // Condition to hide Global ChatBot on Family Chronicles and Learning Pages (Course Viewer)
+  // We want the dedicated AI Tutor to take precedence in the Course Viewer
   const isStoriesPage = location.pathname === AppRoute.STORIES;
+  const isLearningPage = location.pathname.startsWith('/learning/course');
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -57,6 +59,9 @@ const ChatBot: React.FC = () => {
       case AppRoute.STORIES:
         newSuggestions = ["Summarize the Treehouse story", "Help me write about my childhood", "List stories by Uncle Bob"];
         break;
+      case AppRoute.LEARNING:
+        newSuggestions = ["Suggest a beginner course", "How do I track my progress?", "What courses are available?"];
+        break;
       default:
         newSuggestions = ["How do I add an event?", "Where can I upload photos?", "Who is the admin?"];
     }
@@ -65,7 +70,7 @@ const ChatBot: React.FC = () => {
 
   // Initialize/Update Chat Session with Website Data
   useEffect(() => {
-    if (isOpen && hasApiKey() && !isStoriesPage) {
+    if (isOpen && hasApiKey() && !isStoriesPage && !isLearningPage) {
       // Collect all data into a context string
       const websiteData = JSON.stringify({
         events: events.map(e => `${e.title} on ${e.date} at ${e.location} (${e.rsvpStatus})`),
@@ -81,7 +86,7 @@ const ChatBot: React.FC = () => {
         console.error("Failed to init chat session", e);
       }
     }
-  }, [isOpen, events, members, recipes, stories, isStoriesPage]);
+  }, [isOpen, events, members, recipes, stories, isStoriesPage, isLearningPage]);
 
   const handleSend = async (textOverride?: string) => {
     const textToSend = textOverride || input;
@@ -130,8 +135,8 @@ const ChatBot: React.FC = () => {
     }
   };
 
-  // Do not render anything if we are on the Stories page
-  if (isStoriesPage) return null;
+  // Do not render anything if we are on pages that have specialized tools (Stories, CourseViewer)
+  if (isStoriesPage || isLearningPage) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">

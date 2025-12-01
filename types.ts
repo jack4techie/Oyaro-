@@ -87,6 +87,45 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
+// --- E-Learning Types ---
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number; // Index of correct option
+}
+
+export interface Lesson {
+  id: string;
+  title: string;
+  content: string; // Brief description
+  videoUrl?: string; // YouTube Embed URL
+  duration: string;
+  notes?: string; // Markdown-style text for study notes
+  exercises?: QuizQuestion[]; // Quiz at the end of the module
+}
+
+export interface Course {
+  id: string;
+  title: string;
+  description: string;
+  instructor: string;
+  thumbnail: string;
+  // Updated for Kenyan Syllabus
+  category: 'sciences' | 'humanities' | 'technical' | 'ict' | 'languages';
+  level: 'Junior Secondary' | 'Senior Secondary' | 'Tertiary & Skills';
+  lessons: Lesson[];
+}
+
+export interface UserCourseProgress {
+  courseId: string;
+  completedLessonIds: string[];
+  lessonScores: Record<string, number>; // Map of lessonId -> Score (0-100)
+  lastAccessedDate: string;
+  isCompleted: boolean;
+}
+// ------------------------
+
 export enum AppRoute {
   HOME = '/',
   LOGIN = '/login',
@@ -101,5 +140,7 @@ export enum AppRoute {
   SHOP = '/shop',
   FAMILY_TREE = '/family-tree',
   MEMBER = '/member/:id',
-  MEMORIAL = '/memorial'
+  MEMORIAL = '/memorial',
+  LEARNING = '/learning',
+  COURSE = '/learning/course/:courseId'
 }

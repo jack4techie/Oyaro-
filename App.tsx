@@ -15,7 +15,9 @@ import Profile from './components/Profile';
 import MemberProfile from './components/MemberProfile';
 import Shop from './components/Shop';
 import FamilyTree from './components/FamilyTree';
-import Memorial from './components/Memorial'; // Import Memorial
+import Memorial from './components/Memorial';
+import LearningHub from './components/Learning/LearningHub'; // New
+import CourseViewer from './components/Learning/CourseViewer'; // New
 import { AppRoute, User } from './types';
 import { AppProvider } from './context/AppContext';
 import { authService } from './services/authService';
@@ -73,7 +75,9 @@ const App: React.FC = () => {
             <Route path={AppRoute.DIRECTORY} element={<Directory />} />
             <Route path={AppRoute.FAMILY_TREE} element={<FamilyTree />} />
             <Route path={AppRoute.MEMBER} element={<MemberProfile />} />
-            <Route path={AppRoute.MEMORIAL} element={<Memorial />} /> {/* Add Route */}
+            <Route path={AppRoute.MEMORIAL} element={<Memorial />} />
+            <Route path={AppRoute.LEARNING} element={<LearningHub />} /> {/* New */}
+            <Route path={AppRoute.COURSE} element={<CourseViewer />} /> {/* New */}
             <Route path={AppRoute.CALENDAR} element={<EventCalendar />} />
             <Route path={AppRoute.RECIPES} element={<RecipeBook />} />
             <Route path={AppRoute.STORIES} element={<FamilyHistorian />} />
