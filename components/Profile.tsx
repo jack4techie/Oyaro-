@@ -70,7 +70,10 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser, onLogout }) => {
   const startCamera = async () => {
     try {
       setShowCamera(true);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Prefer front-facing camera for avatars
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' } 
+      });
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -95,11 +98,18 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser, onLogout }) => {
       const context = canvasRef.current.getContext('2d');
       if (context) {
         // Match canvas dimensions to video
-        canvasRef.current.width = videoRef.current.videoWidth;
-        canvasRef.current.height = videoRef.current.videoHeight;
+        const width = videoRef.current.videoWidth;
+        const height = videoRef.current.videoHeight;
+        
+        canvasRef.current.width = width;
+        canvasRef.current.height = height;
+        
+        // Mirror the image to match the CSS transform on the video element (WYSIWYG)
+        context.translate(width, 0);
+        context.scale(-1, 1);
         
         // Draw video frame to canvas
-        context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        context.drawImage(videoRef.current, 0, 0, width, height);
         
         // Convert to data URL
         const dataUrl = canvasRef.current.toDataURL('image/jpeg');
@@ -129,26 +139,27 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser, onLogout }) => {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Camera Modal */}
       {showCamera && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl overflow-hidden w-full max-w-lg shadow-2xl flex flex-col">
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
               <h3 className="font-bold">Take Profile Photo</h3>
-              <button onClick={stopCamera} className="hover:text-red-400"><X /></button>
+              <button onClick={stopCamera} className="hover:text-red-400 transition-colors"><X /></button>
             </div>
             <div className="relative bg-black aspect-video flex items-center justify-center overflow-hidden">
+               {/* Video is mirrored via CSS to feel natural like a mirror */}
                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover transform -scale-x-100" />
                <canvas ref={canvasRef} className="hidden" />
             </div>
             <div className="p-6 flex justify-center gap-4 bg-slate-50">
                <button 
                  onClick={stopCamera} 
-                 className="px-6 py-3 rounded-full font-medium text-slate-600 hover:bg-slate-200"
+                 className="px-6 py-3 rounded-full font-medium text-slate-600 hover:bg-slate-200 transition-colors"
                >
                  Cancel
                </button>
                <button 
                  onClick={takePhoto} 
-                 className="px-6 py-3 rounded-full font-bold bg-primary text-white hover:bg-rose-700 flex items-center gap-2"
+                 className="px-6 py-3 rounded-full font-bold bg-primary text-white hover:bg-rose-700 flex items-center gap-2 transition-colors shadow-lg shadow-rose-200/50"
                >
                  <Aperture className="w-5 h-5" /> Capture
                </button>

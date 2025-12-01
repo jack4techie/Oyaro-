@@ -4,9 +4,12 @@ export interface FamilyMember {
   name: string;
   relation: string;
   birthDate: string;
+  deathDate?: string; // New field for Memorial
   location: string;
   avatar: string;
   bio: string;
+  parents?: string[];
+  spouse?: string;
 }
 
 export interface FamilyEvent {
@@ -18,6 +21,7 @@ export interface FamilyEvent {
   type: 'birthday' | 'reunion' | 'holiday' | 'other';
   description: string;
   rsvpStatus?: 'going' | 'maybe' | 'not_going';
+  reminders?: string[];
 }
 
 export interface Recipe {
@@ -40,6 +44,13 @@ export interface FamilyStory {
   tags: string[];
 }
 
+export interface Photo {
+  id: string;
+  url: string;
+  caption: string;
+  date: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -50,6 +61,8 @@ export interface User {
   interests?: string[];
   birthDate?: string;
   phone?: string;
+  authProvider?: 'email' | 'google';
+  relation?: string; // Added relation
 }
 
 export interface Notification {
@@ -85,5 +98,8 @@ export enum AppRoute {
   STORIES = '/stories',
   GALLERY = '/gallery',
   PROFILE = '/profile',
-  SHOP = '/shop'
+  SHOP = '/shop',
+  FAMILY_TREE = '/family-tree',
+  MEMBER = '/member/:id',
+  MEMORIAL = '/memorial'
 }

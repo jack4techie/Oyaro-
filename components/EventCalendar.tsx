@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Calendar as CalendarIcon, MapPin, Plus, Loader2, X, Clock, Check, HelpCircle, XCircle, ArrowUpDown } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, Plus, Loader2, X, Clock, Check, HelpCircle, XCircle, ArrowUpDown, Bell } from 'lucide-react';
 import { suggestEventIdeas, hasApiKey } from '../services/geminiService';
 import { FamilyEvent } from '../types';
 import { useAppContext } from '../context/AppContext';
@@ -18,8 +19,19 @@ const EventCalendar: React.FC = () => {
     time: '',
     location: '',
     type: 'other',
-    description: ''
+    description: '',
+    reminders: []
   });
+
+  // Reminder Modal State
+  const [reminderModalEventId, setReminderModalEventId] = useState<string | null>(null);
+
+  const REMINDER_OPTIONS = [
+    { id: '15m', label: '15 Minutes Before' },
+    { id: '1h', label: '1 Hour Before' },
+    { id: '24h', label: '1 Day Before' },
+    { id: '1w', label: '1 Week Before' },
+  ];
 
   const sortedEvents = [...events].sort((a, b) => {
     switch (sortBy) {
@@ -69,7 +81,7 @@ const EventCalendar: React.FC = () => {
 
     addEvent(eventToAdd);
     setShowAddModal(false);
-    setNewEvent({ title: '', date: '', time: '', location: '', type: 'other', description: '' });
+    setNewEvent({ title: '', date: '', time: '', location: '', type: 'other', description: '', reminders: [] });
   };
 
   const handleUpdateRSVP = (eventId: string, status: 'going' | 'maybe' | 'not_going') => {
@@ -77,6 +89,28 @@ const EventCalendar: React.FC = () => {
     if (event) {
       updateEvent({ ...event, rsvpStatus: status });
     }
+  };
+
+  const toggleNewEventReminder = (reminderId: string) => {
+    setNewEvent(prev => {
+      const current = prev.reminders || [];
+      if (current.includes(reminderId)) {
+        return { ...prev, reminders: current.filter(r => r !== reminderId) };
+      } else {
+        return { ...prev, reminders: [...current, reminderId] };
+      }
+    });
+  };
+
+  const toggleExistingEventReminder = (event: FamilyEvent, reminderId: string) => {
+    const current = event.reminders || [];
+    let updatedReminders;
+    if (current.includes(reminderId)) {
+      updatedReminders = current.filter(r => r !== reminderId);
+    } else {
+      updatedReminders = [...current, reminderId];
+    }
+    updateEvent({ ...event, reminders: updatedReminders });
   };
 
   const formatTime = (timeStr?: string) => {
@@ -90,7 +124,7 @@ const EventCalendar: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
-      {/* Modal Overlay */}
+      {/* Add Event Modal Overlay */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
@@ -177,6 +211,26 @@ const EventCalendar: React.FC = () => {
                   />
                 </div>
 
+                {/* Reminders Section */}
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                    <Bell className="w-4 h-4" /> Set Reminders
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {REMINDER_OPTIONS.map(opt => (
+                      <label key={opt.id} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-slate-900">
+                        <input 
+                          type="checkbox"
+                          checked={(newEvent.reminders || []).includes(opt.id)}
+                          onChange={() => toggleNewEventReminder(opt.id)}
+                          className="rounded border-slate-300 text-primary focus:ring-primary"
+                        />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="pt-2 flex gap-3">
                   <button 
                     type="button" 
@@ -193,6 +247,49 @@ const EventCalendar: React.FC = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reminder Settings Modal for Existing Events */}
+      {reminderModalEventId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><Bell className="w-4 h-4" /> Event Reminders</h3>
+              <button onClick={() => setReminderModalEventId(null)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600" /></button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-slate-500 mb-4">When do you want to be notified?</p>
+              <div className="space-y-3">
+                {REMINDER_OPTIONS.map(opt => {
+                   const evt = events.find(e => e.id === reminderModalEventId);
+                   if (!evt) return null;
+                   const isChecked = (evt.reminders || []).includes(opt.id);
+                   
+                   return (
+                    <label key={opt.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                      <span className="text-sm font-medium text-slate-700">{opt.label}</span>
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center ${isChecked ? 'bg-primary border-primary text-white' : 'border-slate-300 bg-white'}`}>
+                        {isChecked && <Check className="w-3 h-3" />}
+                      </div>
+                      <input 
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleExistingEventReminder(evt, opt.id)}
+                        className="hidden"
+                      />
+                    </label>
+                   );
+                })}
+              </div>
+              <button 
+                onClick={() => setReminderModalEventId(null)}
+                className="w-full mt-6 bg-slate-900 text-white py-2 rounded-lg font-medium hover:bg-slate-800 transition-colors"
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
@@ -232,7 +329,7 @@ const EventCalendar: React.FC = () => {
              </div>
           ) : (
             sortedEvents.map(event => (
-              <div key={event.id} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-6 items-start hover:border-primary/30 transition-colors">
+              <div key={event.id} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-6 items-start hover:border-primary/30 transition-colors group">
                 <div className="flex flex-row md:flex-col gap-4 items-center md:min-w-[80px]">
                   <div className="bg-slate-50 p-4 rounded-lg flex flex-col items-center justify-center min-w-[80px] w-full border border-slate-100 text-slate-700">
                     <span className="text-xs font-bold uppercase tracking-wider">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
@@ -262,9 +359,10 @@ const EventCalendar: React.FC = () => {
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 hover:text-primary transition-colors"
+                          className="flex items-center gap-1 text-slate-600 hover:text-primary transition-colors font-medium group/loc"
+                          title="View on Maps"
                         >
-                          <MapPin className="w-4 h-4" /> {event.location}
+                          <MapPin className="w-4 h-4 text-slate-400 group-hover/loc:text-primary transition-colors" /> {event.location}
                         </a>
                       )}
                       {event.time && (
@@ -275,29 +373,45 @@ const EventCalendar: React.FC = () => {
 
                   <p className="text-slate-600 mb-4">{event.description}</p>
                   
-                  {/* RSVP Section */}
-                  <div className="flex items-center gap-3 pt-3 border-t border-slate-50">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your RSVP:</span>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleUpdateRSVP(event.id, 'going')}
-                        className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all ${event.rsvpStatus === 'going' ? 'bg-green-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-green-100 hover:text-green-700'}`}
-                      >
-                        <Check className="w-3 h-3" /> Going
-                      </button>
-                      <button 
-                         onClick={() => handleUpdateRSVP(event.id, 'maybe')}
-                         className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all ${event.rsvpStatus === 'maybe' ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-700'}`}
-                      >
-                        <HelpCircle className="w-3 h-3" /> Maybe
-                      </button>
-                      <button 
-                         onClick={() => handleUpdateRSVP(event.id, 'not_going')}
-                         className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all ${event.rsvpStatus === 'not_going' ? 'bg-slate-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                      >
-                        <XCircle className="w-3 h-3" /> Can't Go
-                      </button>
+                  {/* RSVP & Reminders Section */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-50">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your RSVP:</span>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleUpdateRSVP(event.id, 'going')}
+                          className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all ${event.rsvpStatus === 'going' ? 'bg-green-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-green-100 hover:text-green-700'}`}
+                        >
+                          <Check className="w-3 h-3" /> Going
+                        </button>
+                        <button 
+                           onClick={() => handleUpdateRSVP(event.id, 'maybe')}
+                           className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all ${event.rsvpStatus === 'maybe' ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-700'}`}
+                        >
+                          <HelpCircle className="w-3 h-3" /> Maybe
+                        </button>
+                        <button 
+                           onClick={() => handleUpdateRSVP(event.id, 'not_going')}
+                           className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all ${event.rsvpStatus === 'not_going' ? 'bg-slate-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                        >
+                          <XCircle className="w-3 h-3" /> Can't Go
+                        </button>
+                      </div>
                     </div>
+
+                    <button 
+                      onClick={() => setReminderModalEventId(event.id)}
+                      className={`
+                        p-2 rounded-full transition-colors relative group-hover:bg-slate-100
+                        ${(event.reminders && event.reminders.length > 0) ? 'text-primary' : 'text-slate-300 hover:text-slate-500'}
+                      `}
+                      title="Set Reminders"
+                    >
+                      <Bell className={`w-5 h-5 ${(event.reminders && event.reminders.length > 0) ? 'fill-current' : ''}`} />
+                      {(event.reminders && event.reminders.length > 0) && (
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border border-white"></span>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>

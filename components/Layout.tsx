@@ -12,7 +12,9 @@ import {
   Menu, 
   X,
   Heart,
-  LogOut
+  LogOut,
+  GitGraph,
+  Flower
 } from 'lucide-react';
 import { AppRoute, User } from '../types';
 import ChatBot from './ChatBot';
@@ -27,14 +29,14 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  // We can access cart here to show a badge if needed, though Shop handles its own UI usually.
-  // Let's add it to the nav just in case.
   const { cart } = useAppContext();
   const cartItemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   const navItems = [
     { name: 'Dashboard', path: AppRoute.DASHBOARD, icon: Home },
     { name: 'Directory', path: AppRoute.DIRECTORY, icon: Users },
+    { name: 'Family Tree', path: AppRoute.FAMILY_TREE, icon: GitGraph },
+    { name: 'In Loving Memory', path: AppRoute.MEMORIAL, icon: Flower },
     { name: 'Calendar', path: AppRoute.CALENDAR, icon: Calendar },
     { name: 'Recipes', path: AppRoute.RECIPES, icon: Utensils },
     { name: 'Historian', path: AppRoute.STORIES, icon: BookOpen },
@@ -95,7 +97,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
            </NavLink>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -124,14 +126,6 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout }) => {
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Alerts</span>
             <div className="md:block hidden">
               <NotificationCenter />
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-secondary/20 to-primary/20 p-4 rounded-xl">
-            <h4 className="text-sm font-bold text-slate-800 mb-1">Annual Gala</h4>
-            <p className="text-xs text-slate-600 mb-2">In 24 days</p>
-            <div className="h-1.5 w-full bg-white rounded-full overflow-hidden">
-              <div className="h-full bg-primary w-3/4 rounded-full"></div>
             </div>
           </div>
           

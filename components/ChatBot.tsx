@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageSquare, Send, Loader2, Sparkles, Minimize2 } from 'lucide-react';
@@ -14,7 +15,7 @@ interface Message {
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: 'Hello! I am the Maonda Foundation Assistant. How can I help you today?' }
+    { role: 'model', text: 'Hello! I am Gervas, the Maonda Foundation Assistant. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +27,9 @@ const ChatBot: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { events, members, recipes, stories } = useAppContext();
+
+  // Condition to hide ChatBot on Family Chronicles page
+  const isStoriesPage = location.pathname === AppRoute.STORIES;
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -61,7 +65,7 @@ const ChatBot: React.FC = () => {
 
   // Initialize/Update Chat Session with Website Data
   useEffect(() => {
-    if (isOpen && hasApiKey()) {
+    if (isOpen && hasApiKey() && !isStoriesPage) {
       // Collect all data into a context string
       const websiteData = JSON.stringify({
         events: events.map(e => `${e.title} on ${e.date} at ${e.location} (${e.rsvpStatus})`),
@@ -77,7 +81,7 @@ const ChatBot: React.FC = () => {
         console.error("Failed to init chat session", e);
       }
     }
-  }, [isOpen, events, members, recipes, stories]);
+  }, [isOpen, events, members, recipes, stories, isStoriesPage]);
 
   const handleSend = async (textOverride?: string) => {
     const textToSend = textOverride || input;
@@ -126,6 +130,9 @@ const ChatBot: React.FC = () => {
     }
   };
 
+  // Do not render anything if we are on the Stories page
+  if (isStoriesPage) return null;
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {isOpen ? (
@@ -137,10 +144,10 @@ const ChatBot: React.FC = () => {
                 <Sparkles className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <h3 className="font-serif font-bold text-sm">Maonda Assistant</h3>
+                <h3 className="font-serif font-bold text-sm">Gervas</h3>
                 <span className="flex items-center gap-1 text-[10px] text-slate-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                  Connected to Website
+                  AI Assistant Online
                 </span>
               </div>
             </div>
@@ -200,7 +207,7 @@ const ChatBot: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Ask about events, recipes..."
+                placeholder="Ask Gervas..."
                 className="flex-1 bg-transparent border-none focus:outline-none text-sm text-slate-800 placeholder:text-slate-400"
               />
               <button 
@@ -220,7 +227,7 @@ const ChatBot: React.FC = () => {
         >
           <MessageSquare className="w-6 h-6" />
           <span className="absolute right-full mr-3 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-            Chat with AI
+            Ask Gervas
           </span>
         </button>
       )}

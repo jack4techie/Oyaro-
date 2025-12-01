@@ -12,48 +12,47 @@ import RecipeBook from './components/RecipeBook';
 import FamilyHistorian from './components/FamilyHistorian';
 import Gallery from './components/Gallery';
 import Profile from './components/Profile';
+import MemberProfile from './components/MemberProfile';
 import Shop from './components/Shop';
+import FamilyTree from './components/FamilyTree';
+import Memorial from './components/Memorial'; // Import Memorial
 import { AppRoute, User } from './types';
 import { AppProvider } from './context/AppContext';
+import { authService } from './services/authService';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Updated storage key for Maonda Foundation
-    const storedUser = localStorage.getItem('maonda_user');
+    // Check for existing session on mount
+    const storedUser = authService.getCurrentUser();
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      setUser(storedUser);
     }
     setIsLoading(false);
   }, []);
 
   const handleLogin = (u: User) => {
-    localStorage.setItem('maonda_user', JSON.stringify(u));
+    authService.setSession(u);
     setUser(u);
   };
 
-  const handleUpdateUser = (updatedUser: User) => {
+  const handleUpdateUser = async (updatedUser: User) => {
+    // Optimistic UI update
     setUser(updatedUser);
-    localStorage.setItem('maonda_user', JSON.stringify(updatedUser));
+    authService.setSession(updatedUser);
 
-    // Also update the 'database' so changes persist across logins
+    // Sync to backend DB
     try {
-      const dbUsers = JSON.parse(localStorage.getItem('maonda_db_users') || '[]');
-      const index = dbUsers.findIndex((u: any) => u.id === updatedUser.id);
-      if (index !== -1) {
-          // Merge updates while preserving the password
-          dbUsers[index] = { ...dbUsers[index], ...updatedUser };
-          localStorage.setItem('maonda_db_users', JSON.stringify(dbUsers));
-      }
+      await authService.updateProfile(updatedUser);
     } catch (e) {
       console.error("Failed to sync user update to DB", e);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('maonda_user');
+    authService.logout();
     setUser(null);
   };
 
@@ -72,6 +71,9 @@ const App: React.FC = () => {
           <Route element={user ? <Layout user={user} onLogout={handleLogout} /> : <Navigate to={AppRoute.LOGIN} replace />}>
             <Route path={AppRoute.DASHBOARD} element={<Dashboard />} />
             <Route path={AppRoute.DIRECTORY} element={<Directory />} />
+            <Route path={AppRoute.FAMILY_TREE} element={<FamilyTree />} />
+            <Route path={AppRoute.MEMBER} element={<MemberProfile />} />
+            <Route path={AppRoute.MEMORIAL} element={<Memorial />} /> {/* Add Route */}
             <Route path={AppRoute.CALENDAR} element={<EventCalendar />} />
             <Route path={AppRoute.RECIPES} element={<RecipeBook />} />
             <Route path={AppRoute.STORIES} element={<FamilyHistorian />} />

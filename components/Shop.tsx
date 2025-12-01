@@ -1,15 +1,18 @@
-
 import React, { useState } from 'react';
-import { ShoppingBag, Minus, Plus, Trash2, X, CreditCard, ShoppingCart } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, Trash2, X, ShoppingCart, Smartphone, CheckCircle, Loader2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
-import { Product } from '../types';
+import { mpesaService } from '../services/mpesaService';
 
 const Shop: React.FC = () => {
   const { products, cart, addToCart, removeFromCart, updateCartQuantity, clearCart } = useAppContext();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [filter, setFilter] = useState<string>('all');
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [checkoutComplete, setCheckoutComplete] = useState(false);
+  
+  // M-Pesa State
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
 
   const filteredProducts = filter === 'all' 
     ? products 
@@ -18,15 +21,40 @@ const Shop: React.FC = () => {
   const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   const cartItemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  const handleCheckout = () => {
-    setIsCheckingOut(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsCheckingOut(false);
-      setCheckoutComplete(true);
-      clearCart();
-      setTimeout(() => setCheckoutComplete(false), 5000);
-    }, 2000);
+  const handleMpesaCheckout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phoneNumber) return;
+
+    setIsProcessing(true);
+    setPaymentStatus('pending');
+    setStatusMessage('Initiating M-Pesa STK Push...');
+
+    try {
+      const response = await mpesaService.initiateSTKPush(phoneNumber, cartTotal);
+      
+      if (response.success) {
+        setStatusMessage(response.message);
+        // Simulate waiting for user to enter PIN
+        setTimeout(async () => {
+             setStatusMessage("Waiting for confirmation...");
+             await mpesaService.checkTransactionStatus(response.checkoutRequestID || '');
+             setPaymentStatus('success');
+             setStatusMessage("Payment Confirmed! Order Placed.");
+             clearCart();
+             setPhoneNumber('');
+        }, 3000);
+      }
+    } catch (error: any) {
+      setPaymentStatus('error');
+      setStatusMessage(error.message || "Payment failed. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const resetCheckout = () => {
+    setPaymentStatus('idle');
+    setStatusMessage('');
   };
 
   return (
@@ -89,7 +117,7 @@ const Shop: React.FC = () => {
               <p className="text-sm text-slate-500 mb-4 line-clamp-2">{product.description}</p>
               
               <div className="mt-auto flex items-center justify-between">
-                <span className="text-lg font-bold text-primary">${product.price.toFixed(2)}</span>
+                <span className="text-lg font-bold text-primary">KES {product.price.toFixed(2)}</span>
                 <button 
                   onClick={() => addToCart(product)}
                   className="bg-slate-900 text-white p-2 rounded-lg hover:bg-primary transition-colors flex items-center gap-2 text-sm font-medium px-4"
@@ -124,15 +152,15 @@ const Shop: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {checkoutComplete ? (
+              {paymentStatus === 'success' ? (
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-4 animate-in zoom-in">
                   <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
-                    <CreditCard className="w-8 h-8" />
+                    <CheckCircle className="w-8 h-8" />
                   </div>
-                  <h3 className="text-2xl font-serif font-bold text-slate-900">Thank You!</h3>
-                  <p className="text-slate-500">Your order has been placed successfully.</p>
+                  <h3 className="text-2xl font-serif font-bold text-slate-900">Payment Successful!</h3>
+                  <p className="text-slate-500">{statusMessage}</p>
                   <button 
-                    onClick={() => { setIsCartOpen(false); setCheckoutComplete(false); }}
+                    onClick={() => { setIsCartOpen(false); resetCheckout(); }}
                     className="mt-4 bg-slate-900 text-white px-6 py-2 rounded-full text-sm font-medium"
                   >
                     Continue Shopping
@@ -161,7 +189,7 @@ const Shop: React.FC = () => {
                         </button>
                       </div>
                       <div className="flex justify-between items-end">
-                        <span className="font-bold text-slate-600 text-sm">${(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-bold text-slate-600 text-sm">KES {(item.price * item.quantity).toFixed(2)}</span>
                         <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-2 py-1">
                           <button 
                             onClick={() => updateCartQuantity(item.id, -1)}
@@ -185,12 +213,12 @@ const Shop: React.FC = () => {
               )}
             </div>
 
-            {!checkoutComplete && cart.length > 0 && (
+            {paymentStatus !== 'success' && cart.length > 0 && (
               <div className="p-5 border-t border-slate-100 bg-slate-50 space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm text-slate-500">
                     <span>Subtotal</span>
-                    <span>${cartTotal.toFixed(2)}</span>
+                    <span>KES {cartTotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-slate-500">
                     <span>Shipping</span>
@@ -198,20 +226,48 @@ const Shop: React.FC = () => {
                   </div>
                   <div className="flex justify-between text-lg font-bold text-slate-900 pt-2 border-t border-slate-200">
                     <span>Total</span>
-                    <span>${cartTotal.toFixed(2)}</span>
+                    <span>KES {cartTotal.toFixed(2)}</span>
                   </div>
                 </div>
-                <button 
-                  onClick={handleCheckout}
-                  disabled={isCheckingOut}
-                  className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-rose-200 hover:bg-rose-700 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isCheckingOut ? (
-                    <>Processing...</>
-                  ) : (
-                    <>Checkout <CreditCard className="w-4 h-4" /></>
+
+                {/* M-Pesa Payment Form */}
+                <form onSubmit={handleMpesaCheckout} className="space-y-3 pt-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">Pay with M-Pesa</label>
+                  <div className="relative">
+                    <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                    <input 
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="2547XXXXXXXX"
+                      disabled={isProcessing}
+                      required
+                      pattern="^(?:254|\+254|0)?(7(?:(?:[129][0-9])|(?:0[0-8])|(4[0-1]))[0-9]{6})$"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors"
+                    />
+                  </div>
+                  
+                  {paymentStatus === 'pending' && (
+                     <div className="bg-blue-50 text-blue-700 text-sm p-3 rounded-lg flex items-center gap-2">
+                       <Loader2 className="w-4 h-4 animate-spin" />
+                       {statusMessage}
+                     </div>
                   )}
-                </button>
+
+                  {paymentStatus === 'error' && (
+                     <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg">
+                       {statusMessage}
+                     </div>
+                  )}
+
+                  <button 
+                    type="submit"
+                    disabled={isProcessing || !phoneNumber}
+                    className="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-200 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isProcessing ? 'Processing...' : `Pay KES ${cartTotal.toFixed(2)}`}
+                  </button>
+                </form>
               </div>
             )}
           </div>

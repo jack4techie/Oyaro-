@@ -1,6 +1,7 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { FamilyEvent, FamilyMember, Recipe, FamilyStory, Product, CartItem } from '../types';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { FamilyEvent, FamilyMember, Recipe, FamilyStory, Product, CartItem, Photo, User } from '../types';
+import { authService } from '../services/authService';
 
 interface AppContextType {
   events: FamilyEvent[];
@@ -9,10 +10,13 @@ interface AppContextType {
   stories: FamilyStory[];
   products: Product[];
   cart: CartItem[];
+  photos: Photo[];
   addEvent: (event: FamilyEvent) => void;
   updateEvent: (event: FamilyEvent) => void;
+  addMember: (member: FamilyMember) => void; // For adding deceased members manually
   addRecipe: (recipe: Recipe) => void;
   addStory: (story: FamilyStory) => void;
+  addPhoto: (photo: Photo) => void;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateCartQuantity: (productId: string, delta: number) => void;
@@ -21,16 +25,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Initial Mock Data
-const INITIAL_MEMBERS: FamilyMember[] = [
-  { id: '1', name: 'Robert Smith', relation: 'Grandfather', birthDate: '1950-05-12', location: 'Austin, TX', avatar: 'https://picsum.photos/100/100?random=1', bio: 'Retired engineer, loves fishing and woodworking.' },
-  { id: '2', name: 'Mary Smith', relation: 'Grandmother', birthDate: '1952-08-23', location: 'Austin, TX', avatar: 'https://picsum.photos/100/100?random=2', bio: 'Best cookie baker in the county. Gardening enthusiast.' },
-  { id: '3', name: 'James Wilson', relation: 'Father', birthDate: '1975-03-15', location: 'Seattle, WA', avatar: 'https://picsum.photos/100/100?random=3', bio: 'Software architect. Loves hiking.' },
-  { id: '4', name: 'Sarah Wilson', relation: 'Mother', birthDate: '1978-11-30', location: 'Seattle, WA', avatar: 'https://picsum.photos/100/100?random=4', bio: 'High school teacher. Bookworm.' },
-  { id: '5', name: 'Emma Wilson', relation: 'Daughter', birthDate: '2005-06-10', location: 'Boston, MA', avatar: 'https://picsum.photos/100/100?random=5', bio: 'College student. Aspiring artist.' },
-  { id: '6', name: 'Lucas Wilson', relation: 'Son', birthDate: '2008-01-22', location: 'Seattle, WA', avatar: 'https://picsum.photos/100/100?random=6', bio: 'High school student. Soccer player.' },
-];
-
+// INITIAL DATA - CLEARED DEFAULT MEMBERS
 const INITIAL_EVENTS: FamilyEvent[] = [
   { 
     id: '1', 
@@ -40,18 +35,9 @@ const INITIAL_EVENTS: FamilyEvent[] = [
     location: "Uncle Joe's Backyard",
     type: 'reunion', 
     description: "Annual summer gathering at Uncle Joe's backyard.",
-    rsvpStatus: 'going'
-  },
-  { 
-    id: '2', 
-    title: "Grandma's 80th Birthday", 
-    date: "2024-09-22", 
-    time: "17:00",
-    location: "Community Hall",
-    type: 'birthday', 
-    description: "Surprise party at the Community Hall.",
-    rsvpStatus: 'maybe'
-  },
+    rsvpStatus: 'going',
+    reminders: ['24h']
+  }
 ];
 
 const INITIAL_RECIPES: Recipe[] = [
@@ -66,16 +52,7 @@ const INITIAL_RECIPES: Recipe[] = [
   }
 ];
 
-const INITIAL_STORIES: FamilyStory[] = [
-  {
-    id: '1',
-    title: "The Treehouse Summer",
-    author: "Uncle Bob",
-    date: "1998-07-15",
-    content: "It was the summer of '98 when we decided to build the biggest treehouse the neighborhood had ever seen. Armed with nothing but scrap wood and youthful optimism, we spent every waking hour in that old oak tree...",
-    tags: ["Childhood", "Summer", "Adventure"]
-  }
-];
+const INITIAL_STORIES: FamilyStory[] = [];
 
 const INITIAL_PRODUCTS: Product[] = [
   { id: '1', name: 'Official Reunion Tee', price: 24.99, category: 'clothing', image: 'https://picsum.photos/400/400?random=100', description: '100% Cotton t-shirt with family crest.' },
@@ -86,13 +63,55 @@ const INITIAL_PRODUCTS: Product[] = [
   { id: '6', name: 'Canvas Tote Bag', price: 12.00, category: 'clothing', image: 'https://picsum.photos/400/400?random=105', description: 'Durable tote for your daily needs.' },
 ];
 
+const INITIAL_PHOTOS: Photo[] = [];
+
+const MEMORIAL_DB_KEY = 'maonda_db_memorial';
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [events, setEvents] = useState<FamilyEvent[]>(INITIAL_EVENTS);
-  const [members] = useState<FamilyMember[]>(INITIAL_MEMBERS);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>(INITIAL_RECIPES);
   const [stories, setStories] = useState<FamilyStory[]>(INITIAL_STORIES);
   const [products] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [photos, setPhotos] = useState<Photo[]>(INITIAL_PHOTOS);
   const [cart, setCart] = useState<CartItem[]>([]);
+
+  // Load Members from Auth DB (Living) and Memorial DB (Deceased)
+  useEffect(() => {
+    const loadMembers = () => {
+      // 1. Get Living Members from Registered Users
+      const registeredUsers = authService.getAllUsers();
+      const livingMembers: FamilyMember[] = registeredUsers.map(u => ({
+        id: u.id,
+        name: u.name,
+        relation: u.relation || 'Member',
+        birthDate: u.birthDate || '',
+        location: u.location || '',
+        avatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=random`,
+        bio: u.bio || '',
+        spouse: '', 
+        parents: []
+      }));
+
+      // 2. Get Memorial/Manual Members from LocalStorage
+      let memorialMembers: FamilyMember[] = [];
+      try {
+        const stored = localStorage.getItem(MEMORIAL_DB_KEY);
+        if (stored) {
+          memorialMembers = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.error("Failed to load memorial members", e);
+      }
+
+      setMembers([...livingMembers, ...memorialMembers]);
+    };
+
+    loadMembers();
+    // Poll for changes in auth DB (simple way to keep directory sync'd without complex listeners)
+    const interval = setInterval(loadMembers, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const addEvent = (event: FamilyEvent) => {
     setEvents(prev => [...prev, event].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
@@ -102,12 +121,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setEvents(prev => prev.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev));
   };
 
+  const addMember = (member: FamilyMember) => {
+    // Determine if this is a manual addition (e.g. Memorial) or live user.
+    // Assuming this function is called mainly for Memorial additions since users register via Auth.
+    
+    // Save to local storage if it's a manual entry (has deathDate usually, or just manual)
+    try {
+      const stored = localStorage.getItem(MEMORIAL_DB_KEY);
+      const currentManual = stored ? JSON.parse(stored) : [];
+      const newManual = [...currentManual, member];
+      localStorage.setItem(MEMORIAL_DB_KEY, JSON.stringify(newManual));
+    } catch (e) {
+      console.error("Failed to save memorial member", e);
+    }
+
+    setMembers(prev => [...prev, member]);
+  };
+
   const addRecipe = (recipe: Recipe) => {
     setRecipes(prev => [recipe, ...prev]);
   };
 
   const addStory = (story: FamilyStory) => {
     setStories(prev => [story, ...prev]);
+  };
+
+  const addPhoto = (photo: Photo) => {
+    setPhotos(prev => [photo, ...prev]);
   };
 
   const addToCart = (product: Product) => {
@@ -148,10 +188,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       stories, 
       products,
       cart,
+      photos,
       addEvent, 
       updateEvent, 
+      addMember,
       addRecipe, 
       addStory,
+      addPhoto,
       addToCart,
       removeFromCart,
       updateCartQuantity,

@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Heart, Mail, Lock, Loader2, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import { AppRoute, User } from '../types';
+import { authService } from '../services/authService';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -19,10 +19,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Check for success message from registration redirect
-    if (location.state?.message) {
-      setSuccessMessage(location.state.message);
-      // Clean up state so message doesn't persist on refresh if we were to use history replace (optional)
+    // Check for success message and email from registration redirect
+    if (location.state) {
+      if (location.state.message) {
+        setSuccessMessage(location.state.message);
+      }
+      if (location.state.email) {
+        setEmail(location.state.email);
+      }
+      // Clear state so it doesn't persist if page is refreshed
       window.history.replaceState({}, document.title);
     }
   }, [location]);
@@ -31,44 +36,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccessMessage('');
     
-    // Simulate network delay
-    setTimeout(() => {
-      try {
-        // Retrieve registered users from local storage
-        const dbUsers = JSON.parse(localStorage.getItem('maonda_db_users') || '[]');
-        
-        // Find user with matching credentials
-        const validUser = dbUsers.find((u: any) => 
-          u.email.toLowerCase() === email.toLowerCase() && u.password === password
-        );
+    try {
+      // Call Backend Service to authenticate
+      const user = await authService.login(email, password);
+      
+      onLogin(user);
+      navigate(AppRoute.DASHBOARD);
 
-        if (validUser) {
-          // Create session user object (exclude password)
-          const sessionUser: User = {
-            id: validUser.id,
-            name: validUser.name,
-            email: validUser.email,
-            avatar: validUser.avatar,
-            bio: validUser.bio,
-            location: validUser.location,
-            interests: validUser.interests,
-            birthDate: validUser.birthDate,
-            phone: validUser.phone
-          };
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during login. Please try again.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-          onLogin(sessionUser);
-          navigate(AppRoute.DASHBOARD);
-        } else {
-          setError('Invalid email or password. Please check your credentials.');
-        }
-      } catch (err) {
-        setError('An error occurred during login. Please try again.');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1000);
+  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
+    setter(value);
+    if (error) setError('');
   };
 
   return (
@@ -83,7 +70,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        <div className="p-8 space-y-6">
           {successMessage && (
             <div className="bg-green-50 text-green-600 p-3 rounded-lg text-sm flex items-start gap-2 border border-green-100">
               <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -98,58 +85,61 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                placeholder="you@example.com"
-              />
+          {/* Email Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => handleInputChange(setEmail, e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                  placeholder="you@example.com"
+                />
+              </div>
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <label className="text-sm font-medium text-slate-700">Password</label>
-              <a href="#" className="text-xs text-primary hover:underline">Forgot password?</a>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-slate-700">Password</label>
+                <a href="#" className="text-xs text-primary hover:underline">Forgot password?</a>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => handleInputChange(setPassword, e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-rose-700 transition-all flex justify-center items-center gap-2 group"
-          >
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-              <>
-                Sign In <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </>
-            )}
-          </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-rose-700 transition-all flex justify-center items-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                <>
+                  Sign In <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
 
-          <div className="text-center text-sm text-slate-600">
-            Don't have an account?{' '}
-            <Link to={AppRoute.REGISTER} className="text-primary font-medium hover:underline">
-              Join the Foundation
-            </Link>
-          </div>
-        </form>
+            <div className="text-center text-sm text-slate-600">
+              Don't have an account?{' '}
+              <Link to={AppRoute.REGISTER} className="text-primary font-medium hover:underline">
+                Join the Foundation
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
